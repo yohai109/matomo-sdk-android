@@ -2,6 +2,7 @@ package org.matomo.sdk.dispatcher;
 
 import org.matomo.sdk.Matomo;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import okhttp3.MediaType;
@@ -44,7 +45,7 @@ public class OkHttpPacketSender implements PacketSender {
         Response res = null;
         try {
             res = mClient.newCall(request).execute();
-            isSuccessful = res.code() == HttpURLConnection.HTTP_NO_CONTENT || res.code() == HttpURLConnection.HTTP_OK;
+            isSuccessful = isSuccessful(res);
             Timber.tag(TAG).d("matomo packet sent successfully");
             Timber.tag(TAG).d("status code: " + res.code());
         } catch (Exception e) {
@@ -67,5 +68,12 @@ public class OkHttpPacketSender implements PacketSender {
     @Override
     public void setGzipData(boolean gzip) {
         mGzip = gzip;
+    }
+
+    private Boolean isSuccessful(Response res) throws IOException {
+        return res.code() == HttpURLConnection.HTTP_NO_CONTENT ||
+                res.code() == HttpURLConnection.HTTP_OK ||
+                res.code() == HttpURLConnection.HTTP_GATEWAY_TIMEOUT ||
+                res.body().string().contains("504");
     }
 }
